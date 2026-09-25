@@ -1,0 +1,231 @@
+/* ---------- Global ---------- */
+/* ---------- Global ---------- */
+* {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;              /* ← kills stray horizontal scroll */
+}
+
+.page {
+  min-height: 100vh;
+  width: 100%;
+  background: #002B5C;              /* Morgan Stanley blue */
+  color: #ffffff;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;           /* stack header, form, list vertically */
+}
+
+/* ---------- Login ---------- */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 40px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 380px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.login-card h1 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  text-align: center;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* ---------- Inputs & Buttons ---------- */
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.95);
+  color: #000;
+  font-size: 14px;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+  outline: 2px solid #4A90E2;
+}
+
+.primary-button {
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #4A90E2;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary-button:hover {
+  background: #3A7BC8;
+}
+
+/* ---------- Password + Eye ---------- */
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  padding-right: 42px;
+  margin-bottom: 12px;
+}
+
+.eye-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px;
+  color: #333;
+}
+
+/* ---------- Todo page ---------- */
+.todo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+/* NEW: centered + light color so it stands out */
+.welcome-heading {
+  flex: 1;
+  text-align: center;
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  color: #FFD966;                 /* warm gold — pops on navy */
+  letter-spacing: 0.5px;
+}
+
+.logout-button {
+  padding: 8px 16px;
+  border: 1px solid #fff;
+  background: transparent;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.logout-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* NEW: section heading above the list */
+.section-heading {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 24px 0 12px;
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 6px;
+}
+
+.empty-message {
+  font-style: italic;
+  opacity: 0.75;
+  padding: 12px 0;
+}
+
+.add-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.add-form input {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.add-form .primary-button {
+  width: auto;
+  padding: 10px 24px;
+}
+
+.todo-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.todo-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.todo-list li.done .todo-title {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* FIXED: left-aligned title, grows to fill */
+.todo-title {
+  flex: 1;
+  font-size: 15px;
+  text-align: left;
+}
+
+.small-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+  background: #4A90E2;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.small-button:hover {
+  background: #3A7BC8;
+}
+
+.small-button.danger {
+  background: #C0392B;
+}
+
+.small-button.danger:hover {
+  background: #A53125;
+}
+
+/* ---------- Error message ---------- */
+.error {
+  color: #FF8A80;
+  background: rgba(255, 0, 0, 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-align: center;
+  margin-bottom: 16px;
+}

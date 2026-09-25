@@ -1,0 +1,194 @@
+I reviwed the code of toDoController and in method you using findByIdAndOwner is good for security. but returning 404 for both todo does not exist and todo belongs to another user is confusing. the task says users must not be able to view or modify another user's todos. for a todo that exists but belongs to someone else shouldnt we return 403 Forbidden instead of 404? that way the API is clearer and the test can check for 403 
+
+ You raise a valid point. Let me explain the trade-off:
+
+ **Returning 404 for both cases (what I did):**
+ - Pro: Does not leak whether a todo exists at all. An attacker can't tell "this ID doesn't exist" from "this ID belongs to someone else."
+ - Con: Semantically imprecise. `404` usually means "resource not found," but here the resource *does* exist — the requester just isn't allowed to see it.
+
+ **Returning 403 for the ownership case (what you're suggesting):**
+ - Pro: Semantically correct. `403 Forbidden` means "I know this resource exists, but you can't access it."
+ - Pro: Makes the required automated test more meaningful — asserting `403` is a stronger, more specific security check than `404`.
+ - Con: Leaks that a todo with that ID exists, even if the requester can't see it. In some security-sensitive contexts, this is undesirable.
+
+ For this task, both approaches are secure and acceptable. The task says "must not be able to view or modify" — a `403` satisfies that completely. Given that the task also asks for a test demonstrating cross-user denial, `403` is arguably the better choice because it's a clearer, more testable signal.
+
+ Here's how I'd refactor it. First, move the logic into a service layer so the controller stays thin:
+
+ **TodoService.java:**
+ ```java
+ public Todo updateTodo(String username, Long id, String title, Boolean completed) {
+     User user = userRepository.findByUsername(username)
+         .orElseThrow(() - new TodoNotFoundException("User not found"));
+
+     Todo todo = todoRepository.findById(id)
+         .orElseThrow(() - new TodoNotFoundException("Todo not found with id: " + id));
+
+     // Ownership check — todo exists but belongs to another user
+     if (!todo.getOwner().getId().equals(user.getId())) {
+         throw new AccessDeniedException("You do not have permission to update this todo");
+     }
+
+     if (title != null) {
+         if (title.trim().isEmpty()) {
+             throw new IllegalArgumentException("Title cannot be empty");
+         }
+         todo.setTitle(title.trim());
+     }
+
+     if (completed != null) {
+         todo.setCompleted(completed);
+     }
+
+     return todoRepository.save(todo);
+ }
+ ```
+
+ **TodoController.java:**
+ ```java
+ @PutMapping("/{id}")
+ public ResponseEntity<? updateTodo(@PathVariable Long id,
+                                     @RequestBody Map<String, Object body,
+                                     Authentication authentication) {
+     try {
+         Todo todo = todoService.updateTodo(
+             authentication.getName(),
+             id,
+             (String) body.get("title"),
+             (Boolean) body.get("completed")
+         );
+         return ResponseEntity.ok(todo);
+     } catch (TodoNotFoundException e) {
+         return ResponseEntity.notFound().build();
+     } catch (AccessDeniedException e) {
+         return ResponseEntity.status(HttpStatus.FORBIDDEN)
+             .body(Map.of("error", e.getMessage()));
+     } catch (IllegalArgumentException e) {
+         return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+     }
+ }
+ ```
+
+ You'd also need a new `AccessDeniedException` class in your `exception/` package. And the same change applies to `deleteTodo`.
+
+
+ yes now ot looks good  can you check and confirm the deleteTodo method shall we do in same way ?
+
+
+ Yes — apply the exact same pattern to `deleteTodo`. In the service:
+
+ ```java
+ public void deleteTodo(String username, Long id) {
+     User user = userRepository.findByUsername(username)
+         .orElseThrow(() - new TodoNotFoundException("User not found"));
+
+     Todo todo = todoRepository.findById(id)
+         .orElseThrow(() - new TodoNotFoundException("Todo not found with id: " + id));
+
+     if (!todo.getOwner().getId().equals(user.getId())) {
+         throw new AccessDeniedException("You do not have permission to delete this todo");
+     }
+
+     todoRepository.delete(todo);
+ }
+ ```
+
+ And in the controller:
+
+ ```java
+ @DeleteMapping("/{id}")
+ public ResponseEntity<? deleteTodo(@PathVariable Long id,
+                                     Authentication authentication) {
+     try {
+         todoService.deleteTodo(authentication.getName(), id);
+         return ResponseEntity.ok(Map.of("message", "Deleted"));
+     } catch (TodoNotFoundException e) {
+         return ResponseEntity.notFound().build();
+     } catch (AccessDeniedException e) {
+         return ResponseEntity.status(HttpStatus.FORBIDDEN)
+             .body(Map.of("error", e.getMessage()));
+     }
+ }
+ ```
+
+ And update the test:
+
+ ```java
+ mockMvc.perform(delete("/api/todos/" + bobTodoId)
+         .with(user("alice").roles("USER")))
+         .andExpect(status().isForbidden());
+ ```
+
+================================================================
+
+
+
+
+Before Code Change
+package com.example.todoapp.controller;
+
+import com.example.todoapp.model.Todo;
+import com.example.todoapp.exception.*;
+import com.example.todoapp.service.TodoService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/todos")
+public class TodoController {
+
+    private final TodoService todoService;
+
+    public TodoController(TodoService todoService) {
+        this.todoService = todoService;
+    }
+
+    @GetMapping
+    public List<Todo> getTodos(Authentication authentication) {
+        return todoService.getTodosForUser(authentication.getName());
+    }
+
+    @PostMapping
+    public ResponseEntity<?> createTodo(@RequestBody Map<String, String> body,
+                                        Authentication authentication) {
+        try {
+            Todo todo = todoService.createTodo(authentication.getName(), body.get("title"));
+            return ResponseEntity.ok(todo);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateTodo(@PathVariable Long id,
+                                        @RequestBody Map<String, Object> body,
+                                        Authentication authentication) {
+        try {
+            Todo todo = todoService.updateTodo(
+                authentication.getName(),
+                id,
+                (String) body.get("title"),
+                (Boolean) body.get("completed")
+            );
+            return ResponseEntity.ok(todo);
+        } catch (TodoNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteTodo(@PathVariable Long id, Authentication authentication) {
+        try {
+            todoService.deleteTodo(authentication.getName(), id);
+            return ResponseEntity.ok(Map.of("message", "Deleted"));
+        } catch (TodoNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+}
