@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TodoRepository extends JpaRepository<Todo, Long> {
-    List<Todo> findByOwner(User owner);
-    Optional<Todo> findByIdAndOwner(Long id, User owner);
+	List<Todo> findByOwner(User owner);
+
+	Optional<Todo> findByIdAndOwner(Long id, User owner);
 }
