@@ -73,10 +73,15 @@ public class TodoService {
 
 	@Transactional
 	public void deleteTodo(String username, Long todoId) {
-		User user = getUserByUsername(username);
+	    User user = getUserByUsername(username);
 
-		Todo todo = todoRepository.findByIdAndOwner(todoId, user).orElseThrow(() -> new TodoNotFoundException(todoId));
+	    Todo todo = todoRepository.findById(todoId)
+	        .orElseThrow(() -> new TodoNotFoundException(todoId));
 
-		todoRepository.delete(todo);
+	    if (!todo.getOwner().getId().equals(user.getId())) {
+	        throw new AccessDeniedException("You do not have permission to delete this todo");
+	    }
+
+	    todoRepository.delete(todo);
 	}
 }
