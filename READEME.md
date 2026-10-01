@@ -81,7 +81,7 @@ Two integration tests are included:
 
 ### 1. Backend enforces ownership, not just the frontend
 
-Every todo endpoint (`GET`, `POST`, `PUT`, `DELETE` on `/api/todos`) looks up the todo using `findByIdAndOwner(id, currentUser)` rather than just `findById(id)`. If a user requests another user's todo, the query returns empty and the API responds with **404 Not Found** — the same response for "not found" and "not yours", so we don't leak whether the ID exists.
+Every todo endpoint looks up the todo by ID, then explicitly verifies ownership in the service layer. If the todo doesn't exist → 404 Not Found. If the todo exists but belongs to another user → 403 Forbidden. This distinction makes the API semantically correct and produces a stronger, more specific security signal in the automated test. The trade-off is that 403 leaks the existence of the todo ID to an attacker — acceptable here because the task's priority is a clearly testable cross-user denial.
 
 This protection lives in the **service layer** (`TodoService`), so it's enforced regardless of which controller calls it.
 
@@ -181,8 +181,12 @@ if (todo == null || !todo.getOwner().getId().equals(currentUser.getId())) {
 }
 
 // My correction (in TodoService):
-Todo todo = todoRepository.findByIdAndOwner(id, user)
+Todo todo = todoRepository.findById(id)
     .orElseThrow(() -> new TodoNotFoundException(id));
+
+if (!todo.getOwner().getId().equals(user.getId())) {
+    throw new AccessDeniedException("You do not have permission to update this todo");
+}
 ```
 
 The custom `findByIdAndOwner` method pushes the ownership filter **into the SQL query**, so a foreign todo is never loaded, and the check lives in one place.

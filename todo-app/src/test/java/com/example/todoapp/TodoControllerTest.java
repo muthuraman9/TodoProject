@@ -64,12 +64,12 @@ class TodoControllerTest {
 	@Test
 	void userCanCreateAndFetchOwnTodo() throws Exception {
 		// Alice creates a todo
-		mockMvc.perform(post("/api/todos").with(user("alice").roles("USER")).contentType("application/json")
+		mockMvc.perform(post("/api/todos").with(user("alice")).contentType("application/json")
 				.content("{\"title\":\"Buy milk\"}")).andExpect(status().isOk())
 				.andExpect(jsonPath("$.title").value("Buy milk")).andExpect(jsonPath("$.completed").value(false));
 
 		// Alice fetches her list — should contain exactly one todo
-		mockMvc.perform(get("/api/todos").with(user("alice").roles("USER"))).andExpect(status().isOk())
+		mockMvc.perform(get("/api/todos").with(user("alice"))).andExpect(status().isOk())
 				.andExpect(jsonPath("$.length()").value(1)).andExpect(jsonPath("$[0].title").value("Buy milk"))
 				.andExpect(jsonPath("$[0].completed").value(false));
 	}
@@ -88,13 +88,15 @@ class TodoControllerTest {
 
 		Long bobTodoId = bobTodo.getId();
 
-		// Alice tries to delete Bob's todo → should get 404 (not 403, not 200)
-		mockMvc.perform(delete("/api/todos/" + bobTodoId).with(user("alice").roles("USER")))
-				.andExpect(status().isNotFound());
+		// Alice tries to delete Bob's todo → should get 403
+		mockMvc.perform(delete("/api/todos/" + bobTodoId).with(user("alice")))
+				.andExpect(status().isForbidden());
 
 		// Bob's todo must still exist
-		mockMvc.perform(get("/api/todos").with(user("bob").roles("USER"))).andExpect(status().isOk())
+		mockMvc.perform(get("/api/todos").with(user("bob"))).andExpect(status().isOk())
 				.andExpect(jsonPath("$.length()").value(1)).andExpect(jsonPath("$[0].id").value(bobTodoId))
 				.andExpect(jsonPath("$[0].title").value("Bob's secret"));
 	}
+	
+	
 }

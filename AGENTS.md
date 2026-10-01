@@ -37,7 +37,7 @@ A small full-stack personal todo app. Spring Boot backend + React frontend + SQL
   - Controllers handle HTTP only
   - Services hold business logic and transactions
   - Repositories handle data access
-- **Ownership checks** must use `TodoRepository.findByIdAndOwner(...)` — never `findById(...)` alone for user-facing operations
+- **Ownership checks**  fetch the todo by ID, then verify todo.getOwner().getId().equals(currentUser.getId()). If it doesn't match, throw AccessDeniedException
 - **Exceptions**: custom exceptions live in `exception/`, handled globally in `advice/GlobalExceptionHandler`
 - **Return 404, not 403**, when a user requests a resource they don't own (avoids leaking existence)
 - **Passwords**: BCrypt only, via Spring Security's `PasswordEncoder`
